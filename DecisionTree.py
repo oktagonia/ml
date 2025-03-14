@@ -49,16 +49,13 @@ class DecisionTree:
     def terminal(self):
         return not self.left or not self.right
     
-    def predict(self, x, debug=False, indent=0):
+    def predict(self, x):
         if self.terminal():
-            if debug: print(indent * ' ' + 'terminal node')
             classes, counts = np.unique(self.target, return_counts=True)
             return classes[np.argmax(counts)]
-        if debug:
-            print(indent * ' ', self.right, self.test, self.left)
-        return self.right.predict(x, debug=debug, indent=indent+2) if self.test(x) else self.left.predict(x, debug=debug, indent=indent+2)
+        return self.right.predict(x) if self.test(x) else self.left.predict(x)
     
-    def learn(self, depth=0, debug=False, max_depth=math.inf):
+    def learn(self, depth=0, max_depth=math.inf):
         max_info_gain = 0
         optimal_test = None
         
@@ -73,19 +70,12 @@ class DecisionTree:
                     optimal_test = test
                     max_info_gain = info_gain
                     
-        if debug and optimal_test:
-            print(2*depth * ' ' + f'{optimal_test.feature} > {optimal_test.threshold}, {max_info_gain}')
-                    
         if depth >= max_depth or not optimal_test:
-            if debug: print(2*depth * ' ' + f'Test: leaf')
             return
-        
-        if debug:
-            print(2*depth * ' ' + f'Test: {optimal_test.feature} > {optimal_test.threshold}')
         
         self.test = optimal_test
         self.left = DecisionTree(self.data[self.data[optimal_test.feature] <= optimal_test.threshold], self.feature_labels, self.target_label)
         self.right = DecisionTree(self.data[self.data[optimal_test.feature] > optimal_test.threshold], self.feature_labels, self.target_label)
         
-        self.left.learn(debug=debug, depth=depth + 1, max_depth=max_depth)
-        self.right.learn(debug=debug, depth=depth + 1, max_depth=max_depth)
+        self.left.learn(depth=depth + 1, max_depth=max_depth)
+        self.right.learn(depth=depth + 1, max_depth=max_depth)
